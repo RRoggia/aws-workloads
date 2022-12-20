@@ -1,0 +1,101 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description: Set up Infrastructure for app
+Resources:
+  VPCThreeTierDemo:
+    Type: AWS::EC2::VPC
+    Properties: 
+      CidrBlock: 26.0.0.0/16
+      EnableDnsSupport: true
+      EnableDnsHostnames: true
+      Tags: 
+        - Key: Name
+          Value: three-tier-demo-vpc
+  SubnetPublicAZA:
+    Type: AWS::EC2::Subnet
+    Properties: 
+      AvailabilityZone: !Select [ 0, !GetAZs ]
+      CidrBlock: 26.0.0.0/24
+      VpcId: !Ref VPCThreeTierDemo
+      Tags: 
+        - Key: Name
+          Value: ttd-app-public-subnet-a
+  SubnetPublicAZB:
+    Type: AWS::EC2::Subnet
+    Properties: 
+      AvailabilityZone: !Select [ 1, !GetAZs ]
+      CidrBlock: 26.0.1.0/24
+      VpcId: !Ref VPCThreeTierDemo
+      Tags: 
+        - Key: Name
+          Value: ttd-app-public-subnet-b
+  SubnetPrivateAZA:
+    Type: AWS::EC2::Subnet
+    Properties: 
+      AvailabilityZone: !Select [ 0, !GetAZs ]
+      CidrBlock: 26.0.2.0/24
+      VpcId: !Ref VPCThreeTierDemo
+      Tags: 
+        - Key: Name
+          Value: ttd-app-app-private-subnet-a
+  SubnetPrivateAZB:
+    Type: AWS::EC2::Subnet
+    Properties: 
+      AvailabilityZone: !Select [ 1, !GetAZs ]
+      CidrBlock: 26.0.3.0/24
+      VpcId: !Ref VPCThreeTierDemo
+      Tags: 
+        - Key: Name
+          Value: ttd-app-app-private-subnet-b
+  DBSubnetPrivateAZA:
+    Type: AWS::EC2::Subnet
+    Properties: 
+      AvailabilityZone: !Select [ 0, !GetAZs ]
+      CidrBlock: 26.0.4.0/24
+      VpcId: !Ref VPCThreeTierDemo
+      Tags: 
+        - Key: Name
+          Value: ttd-db-private-subnet-a
+  DBSubnetPrivateAZB:
+    Type: AWS::EC2::Subnet
+    Properties: 
+      AvailabilityZone: !Select [ 1, !GetAZs ]
+      CidrBlock: 26.0.5.0/24
+      VpcId: !Ref VPCThreeTierDemo
+      Tags: 
+        - Key: Name
+          Value: ttd-db-private-subnet-b
+  InternetGateway:
+    Type: AWS::EC2::InternetGateway
+    Properties:
+      Tags:
+      - Key: Name
+        Value: ttd-ig
+  InternetGatewayVPCAttachment:
+    Type: AWS::EC2::VPCGatewayAttachment
+    Properties: 
+      InternetGatewayId: !Ref InternetGateway
+      VpcId: !Ref VPCThreeTierDemo
+  PublicRouteTable:
+    Type: AWS::EC2::RouteTable
+    Properties:
+      VpcId: !Ref VPCThreeTierDemo
+      Tags:
+      - Key: Name
+        Value: ttd-public-route-table
+  IGRoutePublicRouteTable:
+    Type: AWS::EC2::Route
+    DependsOn: InternetGateway
+    Properties:
+       RouteTableId: !Ref PublicRouteTable
+       DestinationCidrBlock: 0.0.0.0/0
+       GatewayId: !Ref InternetGateway
+  AttachIGRoutePublicRouteTableToSubnetPublicAZA:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties: 
+      RouteTableId: !Ref IGRoutePublicRouteTable
+      SubnetId: !Ref SubnetPublicAZA
+  AttachIGRoutePublicRouteTableToSubnetPublicAZB:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties: 
+      RouteTableId: !Ref IGRoutePublicRouteTable
+      SubnetId: !Ref SubnetPublicAZB
