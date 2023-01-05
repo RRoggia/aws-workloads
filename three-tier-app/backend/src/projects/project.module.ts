@@ -1,13 +1,11 @@
 import { Module } from '@nestjs/common'
-import { ConfigModule } from '@nestjs/config'
-import dbConfig from '../config/db'
+import { TypeOrmModule } from '@nestjs/typeorm'
+import { Project } from '../model/project.entity'
 import { ProjectController } from './project.controller'
 import { ProjectService } from './project.service'
 
 @Module({
-  imports: [ConfigModule.forRoot({
-    load: [dbConfig],
-  })],
+  imports: [TypeOrmModule.forFeature([Project])],
   controllers: [ProjectController],
   providers: [ProjectService],
 })

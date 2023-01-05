@@ -1,8 +1,15 @@
 import { Injectable } from '@nestjs/common';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Project } from 'src/model/project.entity';
+import { Repository } from 'typeorm';
 
 @Injectable()
 export class ProjectService {
-  getProjects(): Array<Number> {
-    return [123,345];
+  constructor(@InjectRepository(Project)
+  private projectRepository: Repository<Project>) { }
+
+  getProjects(): Promise<Project[]> {
+    console.log("passou aqui")
+    return this.projectRepository.find();
   }
 }
