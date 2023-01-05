@@ -19,7 +19,7 @@ For this three tier application example we are going to use a simple application
 2. **Backend**: A Typescript server application based on NestJS. This app connects the **Database** and exposes the data through a REST API.
 3. **Frontend**: A Javascript server side render application based on Express. This app consumes the **Backend** and serves dynamic and static HTML.
 
-![Applications Architecture](./diagrams/aws trainning-applications-implementation.drawio.png)
+![Applications Architecture](./diagrams/aws-trainning-applications-implementation.drawio.png)
 
 ## Infrastructure Implementation
 
