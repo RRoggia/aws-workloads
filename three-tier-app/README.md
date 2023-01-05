@@ -11,7 +11,17 @@ The three tier architecture consists of 3 tiers as follows:
 - High Availability
   - Redundancy between two availability zones.
 
-## Implementation
+## Application Implementation
+
+For this three tier application example we are going to use a simple application that can manage projects. This app is built in three parts, each part is a separated service of the app:
+
+1. **Database**: A instance of PostgreSQL database which stores the project data.
+2. **Backend**: A Typescript server application based on NestJS. This app connects the **Database** and exposes the data through a REST API.
+3. **Frontend**: A Javascript server side render application based on Express. This app consumes the **Backend** and serves dynamic and static HTML.
+
+![Applications Architecture](./diagrams/aws trainning-applications-implementation.drawio.png)
+
+## Infrastructure Implementation
 
 Below are the details of the architecture implementation.
 
