@@ -1,15 +1,17 @@
+const { url } = require("../projectService")
+
 function generateProjectHTML( projects ) {
   const tableStyle = `width:100%; text-align:center;`
   const editEntry =(e) => {
     clickedId = e.path[2].children[0].innerText
     console.log("edit", clickedId )
   }
-  const deleteEntry = (e) => {
+  const deleteEntry = async (e) => {
     clickedId = e.path[2].children[0].innerText
-    console.log("delete", clickedId)
+    await fetch(`${url}/projects/${clickedId}`, {method:"DELETE"} )
   }
   const addEntry = () => {
-    console.log("add")
+    window.location.href = '/projects/add';
   }
 
   return `
@@ -32,9 +34,6 @@ function generateProjectHTML( projects ) {
       <th>Client</th>
       <th>Project</th>
       <th>Core</th>
-      <th>Business Analists</th>
-      <th>Solution Architects</th>
-      <th>Developer</th>
       <th>Go Live</th>
       <th>Manage</th>
     </tr>
@@ -44,9 +43,6 @@ function generateProjectHTML( projects ) {
         <td>${p.client}</td>
         <td>${p.project}</td>
         <td>${p.core}</td>
-        <td>${p.roles.ba}</td>
-        <td>${p.roles.sa}</td>
-        <td>${p.roles.dev}</td>
         <td>${p.goLiveDate}</td>
         <td><button onclick="editEntry(event)">edit</button> <button onclick="deleteEntry(event)">delete</button></td>
       </tr>`)}

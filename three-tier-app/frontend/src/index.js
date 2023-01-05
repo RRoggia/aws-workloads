@@ -1,7 +1,7 @@
 const express = require('express')
 const path = require('path')
 const app = express()
-const { fetchProjects } = require('./service')
+const { fetchProjects } = require('./projectService')
 const { generateProjectHTML } = require('./htmlGenerator/index')
 
 const serverPort = process.env.serverPort || 3000
