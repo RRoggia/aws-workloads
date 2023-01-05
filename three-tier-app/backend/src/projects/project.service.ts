@@ -9,7 +9,6 @@ export class ProjectService {
   private projectRepository: Repository<Project>) { }
 
   getProjects(): Promise<Project[]> {
-    console.log("passou aqui")
     return this.projectRepository.find();
   }
 }
