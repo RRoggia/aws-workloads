@@ -33,6 +33,8 @@ The application running in the Presentation tier is going to receive traffic fro
 
 In order to deploy the application we need compute resources, in this example we'll use the EC2 Auto Scaling to manage our EC2 instances. When using the auto scaling groups we can set up rules to monitor EC2 metrics and trigger events of scale out or scale in (Horizontal Scaling). In addition, we can specify a set of subnets in different availability zones to run the EC2 instances, therefore, adding High Availability in cases where an availability zone fails.
 
+### Configuring the Auto Scaling Group
+
 The Auto Scaling groups requires:
 
 - Capacity limits
@@ -68,6 +70,8 @@ The launch templates supports versions allowing to change the template without i
 We specify both public subnets tolerance to failing availability zones. It's important that the subnets in this Auto Scaling Group have the auto IPv4 assignment enabled.
 
 #### Load Balancer
+
+When specifying a Load Balancer in the ASG, when adding new EC2 instances, these instances are automatically registered in the ELB allowing then to automatically receive traffic, thus, automatically scaling your app.
 
 The final diagram looks like this:
 
