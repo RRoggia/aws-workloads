@@ -8,8 +8,8 @@ The three tier architecture consists of 3 tiers as follows:
 
 ## Characteristics
 
-- High Availability
-  - Redundancy between two availability zones.
+- High Availability: Redundancy between two availability zones
+- Automated: Using AWS CloudFormation scripts to automate the scenarios
 
 ## Application Implementation
 
@@ -24,6 +24,22 @@ For this three tier application example we are going to use a simple application
 ## Infrastructure Implementation
 
 Below are the details of the architecture implementation.
+
+### CloudFormation
+All the resources described below can be automatically created using the `infrastructure.yml` and the AWS CloudFormation service.
+
+In linux, from the root folder, you could run:
+
+```
+$ aws cloudformation create-stack --stack-name <CHANGE-TO-YOUR-STACK-NAME> --template-body file://$(pwd)/three-tier-app/infrastructure.yml
+```
+
+After you finish using it, you can delete using:
+
+```
+$ aws cloudformation delete-stack --stack-name <CHANGE-TO-YOUR-STACK-NAME>
+```
+
 
 ### VPC and Subnets
 

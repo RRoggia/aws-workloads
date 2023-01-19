@@ -9,7 +9,9 @@ Resources:
       EnableDnsHostnames: true
       Tags: 
         - Key: Name
-          Value: three-tier-demo-vpc
+          Value: ttd-vpc
+
+# Create Subnets
   SubnetPublicAZA:
     Type: AWS::EC2::Subnet
     Properties: 
@@ -64,6 +66,8 @@ Resources:
       Tags: 
         - Key: Name
           Value: ttd-db-private-subnet-b
+
+# Configure Internet Gateway for VPC
   InternetGateway:
     Type: AWS::EC2::InternetGateway
     Properties:
@@ -90,12 +94,80 @@ Resources:
        DestinationCidrBlock: 0.0.0.0/0
        GatewayId: !Ref InternetGateway
   AttachIGRoutePublicRouteTableToSubnetPublicAZA:
+    DependsOn: IGRoutePublicRouteTable
     Type: AWS::EC2::SubnetRouteTableAssociation
     Properties: 
       RouteTableId: !Ref IGRoutePublicRouteTable
       SubnetId: !Ref SubnetPublicAZA
   AttachIGRoutePublicRouteTableToSubnetPublicAZB:
+    DependsOn: IGRoutePublicRouteTable
     Type: AWS::EC2::SubnetRouteTableAssociation
     Properties: 
       RouteTableId: !Ref IGRoutePublicRouteTable
       SubnetId: !Ref SubnetPublicAZB
+  
+# Configure Nat Gateway for AZ A
+  NATGatewayAZAEIP:
+    Type: AWS::EC2::EIP
+    Properties:
+        Domain: vpc
+  NATGatewayAZA:
+   Type: AWS::EC2::NatGateway
+   Properties:
+      AllocationId: !GetAtt NATGatewayAZAEIP.AllocationId
+      SubnetId: !Ref SubnetPublicAZA
+      Tags:
+      - Key: Name
+        Value: ttd-nat-gateway-a
+  PrivateRouteTableAZA:
+    Type: AWS::EC2::RouteTable
+    Properties:
+      VpcId: !Ref VPCThreeTierDemo
+      Tags:
+      - Key: Name
+        Value: ttd-private-route-table-a
+  RouteNATGatewayAZA:
+    DependsOn: NATGatewayAZA
+    Type: AWS::EC2::Route
+    Properties:
+        RouteTableId: !Ref PrivateRouteTableAZA
+        DestinationCidrBlock: '0.0.0.0/0'
+        NatGatewayId: !Ref NATGatewayAZA
+  AttachNGWPrivateRouteTableToSubnetPublicAZA:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties: 
+      RouteTableId: !Ref PrivateRouteTableAZA
+      SubnetId: !Ref SubnetPrivateAZA
+
+# Configure Nat Gateway for AZ B  
+  NATGatewayAZABEIP:
+    Type: AWS::EC2::EIP
+    Properties:
+        Domain: vpc
+  NATGatewayAZB:
+   Type: AWS::EC2::NatGateway
+   Properties:
+      AllocationId: !GetAtt NATGatewayAZABEIP.AllocationId
+      SubnetId: !Ref SubnetPublicAZB
+      Tags:
+      - Key: Name
+        Value: ttd-nat-gateway-b
+  PrivateRouteTableAZB:
+    Type: AWS::EC2::RouteTable
+    Properties:
+      VpcId: !Ref VPCThreeTierDemo
+      Tags:
+      - Key: Name
+        Value: ttd-private-route-table-b
+  RouteNATGatewayAZB:
+    DependsOn: NATGatewayAZB
+    Type: AWS::EC2::Route
+    Properties:
+        RouteTableId: !Ref PrivateRouteTableAZB
+        DestinationCidrBlock: '0.0.0.0/0'
+        NatGatewayId: !Ref NATGatewayAZB
+  AttachNGWPrivateRouteTableToSubnetPublicAZB:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties: 
+      RouteTableId: !Ref PrivateRouteTableAZB
+      SubnetId: !Ref SubnetPrivateAZB

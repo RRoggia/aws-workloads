@@ -10,7 +10,7 @@ function generateProjectHTML( projects ) {
     clickedId = e.path[2].children[0].innerText
     await fetch(`${url}/projects/${clickedId}`, {method:"DELETE"} )
   }
-  const addEntry = () => {
+  const navigateToAddProjectPage = () => {
     window.location.href = '/projects/add';
   }
 
@@ -22,7 +22,7 @@ function generateProjectHTML( projects ) {
     <script>
       const editEntry=${editEntry}
       const deleteEntry=${deleteEntry}
-      const addEntry=${addEntry}
+      const addEntry=${navigateToAddProjectPage}
     </script>
     
     <h1>Projects</h1>
