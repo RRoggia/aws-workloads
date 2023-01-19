@@ -1,0 +1,42 @@
+service: nodejs-demo-api
+
+provider:
+  name: aws
+  runtime: nodejs16.x
+  stage: ${opt:stage, 'dev'}
+  httpApi:
+    cors: true
+
+functions:
+  createProject:
+    name: ${sls:stage}-createProject
+    handler: src/projects/index.createProjectHandler
+    memorySize: 128
+    events:
+      - httpApi:
+          path: /projects/{id}
+          method: post
+  deleteProject:
+    name: ${sls:stage}-deleteProject
+    handler: src/projects/index.deleteProjectHandler
+    memorySize: 128
+    events:
+      - httpApi:
+          path: /projects/{id}
+          method: delete
+  getProject:
+    name: ${sls:stage}-getProject
+    handler: src/projects/index.getProjectHandler
+    memorySize: 128
+    events:
+      - httpApi:
+          path: /projects/{id}
+          method: get
+  getProjects:
+    name: ${sls:stage}-getProjects
+    handler: src/projects/index.getProjectsHandler
+    memorySize: 128
+    events:
+      - httpApi:
+          path: /projects
+          method: get
