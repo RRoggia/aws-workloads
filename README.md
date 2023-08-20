@@ -18,4 +18,6 @@ AWS Services: EKS
 ## Lambda
 This project demonstrates how Lambda functions can reduce the overhead on infrastructure and simplify development for event driven architectures.
 
+[Examples](./lambda/)
+
 AWS Services: Lambda, SQS, SNS, S3

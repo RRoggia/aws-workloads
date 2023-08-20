@@ -2,6 +2,12 @@
 
 This project demonstrates how a lambda can be triggered using S3 Event notification triggering an assynchronous invocation of the Lambda function.
 
+This examples uses AWS SAM, which relies on cloud formation, therefore, all the AWS resources are automatically created during the deployment.
+Resources:
+- S3 Bucket to store the code
+- S3 Bucket with a S3 Event notification (triggers everytime you create an object in the bucket)
+- Lambda function
+
 ## SAM Documentation 
 
 ### Project structure

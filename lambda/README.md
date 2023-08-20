@@ -9,7 +9,7 @@ Invocations:
     - Function URL
     - API Gateway
 - Asynchronous:
-    - S3
+    - [(AWS SAM) - S3 Event Notification](./sam-async-invocation/)
     - Queues
     - DLQ
 - Event Source Mapping
