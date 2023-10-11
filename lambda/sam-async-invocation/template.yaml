@@ -9,6 +9,11 @@ Resources:
     Type: 'AWS::S3::Bucket'
     Properties:
       BucketName: renan-demo2
+  
+  demoSQSStandardQueue:
+    Type: AWS::SQS::Queue
+    Properties:
+      QueueName: renan-demo-queue
 
   helloFromLambdaFunction:
     Type: AWS::Serverless::Function
@@ -29,6 +34,23 @@ Resources:
             Events: s3:ObjectCreated:*
             Bucket: 
               Ref: demoS3Bucket
+  
+  helloSQSLambdaFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      Handler: src/handlers/hello-from-queue.helloFromLambdaHandler
+      Runtime: nodejs18.x
+      Architectures:
+      - x86_64
+      MemorySize: 128
+      Description: A Lambda function that returns a static string.
+      Policies:
+      - AWSLambdaBasicExecutionRole
+      Events:
+        SQSTrigger:
+          Type: SQS
+          Properties:
+            Queue: !GetAtt demoSQSStandardQueue.Arn
 
 Globals:
   Function:

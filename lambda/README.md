@@ -10,6 +10,6 @@ Invocations:
     - API Gateway
 - Asynchronous:
     - [(AWS SAM) - S3 Event Notification](./sam-async-invocation/)
-    - Queues
+    - [(AWS SAM) - Simple Queue Service](./sam-async-invocation/)
     - DLQ
 - Event Source Mapping

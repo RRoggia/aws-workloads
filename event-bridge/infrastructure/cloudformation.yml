@@ -1,0 +1,46 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Description: A sample template
+Resources:
+  DemoEventBus:
+    Type: AWS::Events::EventBus
+    Properties: 
+      Name: demo-event-bus
+
+  DemoQueue:
+    Type: AWS::SQS::Queue
+    Properties: 
+      QueueName: demo-queue
+  
+  DemoEventRule:
+    Type: AWS::Events::Rule
+    DependsOn: DemoQueue
+    Properties: 
+      EventBusName: !GetAtt DemoEventBus.Name
+      EventPattern: {
+          "source": ["demo-app"]
+      }
+      Name: demo-event-rule
+      Targets: 
+        - Arn: !GetAtt DemoQueue.Arn
+          Id: 10
+  
+  SQSDemoQueueForEventRule:
+    Type: AWS::SQS::QueuePolicy
+    DependsOn: DemoEventRule
+    Properties: 
+      Queues:
+        - !Ref DemoQueue
+      PolicyDocument:
+        Version: "2012-10-17" 
+        Statement: 
+          - 
+            Action: 
+              - "sqs:SendMessage" 
+            Effect: "Allow"
+            Resource: !GetAtt DemoQueue.Arn
+            Principal:  
+              Service: 
+                - "events.amazonaws.com"
+            Condition:
+              ArnEquals:
+                aws:SourceArn: !GetAtt DemoEventRule.Arn

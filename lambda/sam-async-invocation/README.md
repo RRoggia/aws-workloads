@@ -6,7 +6,8 @@ This examples uses AWS SAM, which relies on cloud formation, therefore, all the 
 Resources:
 - S3 Bucket to store the code
 - S3 Bucket with a S3 Event notification (triggers everytime you create an object in the bucket)
-- Lambda function
+- SQS Standard Queue (triggers lambda everytime you send a message)
+- 2 Lambda function
 
 ## SAM Documentation 
 
