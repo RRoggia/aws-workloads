@@ -18,6 +18,16 @@ const input = {
 				number: Math.random() * 100
 			}),
 		},
+		{
+			EventBusName: "demo-event-bus",
+			Source: "do-not-process",
+			DetailType: "i-dont-know",
+			Time: new Date(),
+			Detail: JSON.stringify({
+				name: "renan",
+				number: Math.random() * 100
+			}),
+		},
 	]
 }
 

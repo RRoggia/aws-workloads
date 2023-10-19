@@ -6,10 +6,18 @@ Resources:
     Properties: 
       Name: demo-event-bus
 
+  DLQDemoQueue:
+    Type: AWS::SQS::Queue
+    Properties: 
+      QueueName: dlq-demo-queue
+
   DemoQueue:
     Type: AWS::SQS::Queue
     Properties: 
       QueueName: demo-queue
+      RedrivePolicy:
+        maxReceiveCount: 3
+        deadLetterTargetArn: !GetAtt DLQDemoQueue.Arn
   
   DemoEventRule:
     Type: AWS::Events::Rule
@@ -17,7 +25,7 @@ Resources:
     Properties: 
       EventBusName: !GetAtt DemoEventBus.Name
       EventPattern: {
-          "source": ["demo-app"]
+          "source": ["demo-app", "do-not-process"]
       }
       Name: demo-event-rule
       Targets: 

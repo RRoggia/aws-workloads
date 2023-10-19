@@ -31,6 +31,11 @@ async function readMessage() {
 
   for (const message of messages) {
     try {
+      const body: { source: string } = JSON.parse(message.Body || "")
+      if (body.source === "do-not-process") {
+        console.log(`skipping message with receipt ${message.ReceiptHandle}`)
+        continue
+      }
       console.log(`processing message with receipt ${message.ReceiptHandle}`)
       processedEntries.push({
         Id: message.MessageId,
@@ -52,8 +57,12 @@ async function readMessage() {
     QueueUrl: QUEUE_URL
   })
 
-  // needs to error handling success and error
-  console.log(deleteMessageBatchResponse)
+  if (deleteMessageBatchResponse.$metadata.httpStatusCode === 200) {
+    console.log("deleted messages correctly")
+  } else {
+    console.log("Error, messages are going back to queue")
+    console.log(deleteMessageBatchResponse)
+  }
 }
 
 async function readMessageInLoop() {
