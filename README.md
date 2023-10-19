@@ -1,8 +1,14 @@
 # AWS Workloads
 
+## Event Bridge
+This projects demonstrates a simple event driven architecuture using AWS Event Bridge as the event bus to receive and route events.
+
+[Event Bridge Example](./event-bridge/)
+
 ## Three Tier App
 This project demonstrates the basics of networking, database and computing by exposing a simple web application that communicates with a server with DB connectivity.
 
+[Three tier app Example](./three-tier-app/)
 AWS Services: VPC, EC2, RDS
 
 ## ECS
