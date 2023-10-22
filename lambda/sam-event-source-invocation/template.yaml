@@ -1,0 +1,67 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: >
+  sam-event-source-invocation
+
+  Sample SAM Template for sam-event-source-invocation
+  
+Globals:
+  Function:
+    Timeout: 3
+
+Resources:
+
+  DLQEventSourceQueue:
+    Type: AWS::SQS::Queue
+    Properties: 
+      QueueName: dlq-event-source-queue
+
+  EventSourceQueue:
+    Type: AWS::SQS::Queue
+    Properties:
+      QueueName: event-source-queue
+      ReceiveMessageWaitTimeSeconds: 20
+      RedrivePolicy:
+        maxReceiveCount: 3
+        deadLetterTargetArn: !GetAtt DLQEventSourceQueue.Arn
+  
+  EventSourceQueueSendMessageRole:
+    Type: AWS::SQS::QueuePolicy
+    Properties: 
+      Queues:
+        - !Ref EventSourceQueue
+      PolicyDocument:
+        Version: "2012-10-17" 
+        Statement: 
+          - 
+            Action: 
+              - "sqs:SendMessage" 
+            Effect: "Allow"
+            Resource: !GetAtt EventSourceQueue.Arn
+            Principal:  
+              AWS: 
+                - "arn:aws:iam::<replace with user>"
+
+  EventSourceLambdaFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: src/
+      Handler: app.lambdaHandler
+      Runtime: nodejs18.x
+      Architectures:
+        - x86_64
+      Events:
+        SQSEvent:
+          Type: SQS
+          Properties:
+            Queue: !GetAtt EventSourceQueue.Arn
+            FunctionResponseTypes:
+              - ReportBatchItemFailures
+
+Outputs:
+  EventSourceLambdaFunction:
+    Description: "Event Source Lambda Function ARN"
+    Value: !GetAtt EventSourceLambdaFunction.Arn
+  EventSourceLambdaFunctionIamRole:
+    Description: "Implicit IAM Role created for Event Source Lambda Function"
+    Value: !GetAtt EventSourceLambdaFunctionRole.Arn
