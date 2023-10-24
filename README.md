@@ -11,6 +11,11 @@ This project demonstrates the basics of networking, database and computing by ex
 [Three tier app Example](./three-tier-app/)
 AWS Services: VPC, EC2, RDS
 
+## ECR
+This projects demonstrates how to create a private repository with image scan and life cycle rules. It also teaches how to publish images.
+
+[ECR Example](/ecr/)
+
 ## ECS
 This project demonstrates how ECS abstracts several pieces of infrastrcuture required in the Three Tier APP demo and improves the deployment using containers.
 
