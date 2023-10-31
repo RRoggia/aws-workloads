@@ -19,6 +19,7 @@ This projects demonstrates how to create a private repository with image scan an
 ## ECS
 This project demonstrates how ECS abstracts several pieces of infrastrcuture required in the Three Tier APP demo and improves the deployment using containers.
 
+[ECS Example](/ecs/)
 AWS Services: ECS
 
 ## EKS

@@ -1,0 +1,245 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Description: Creates a ECS Cluster and services using Fargate
+
+Resources:
+  ## Networking
+  ECSFargateVPC:
+    Type: AWS::EC2::VPC
+    Properties:
+      CidrBlock: 50.0.0.0/16
+      EnableDnsHostnames: true
+      Tags:
+        - Key: Name
+          Value: ecs-fargate-vpc
+  
+  ECSFargatePublicSubnetAZA:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref ECSFargateVPC
+      AvailabilityZone: !Select [0, !GetAZs ]
+      CidrBlock: 50.0.0.0/24
+      Tags:
+        - Key: Name
+          Value: ecs-fargate-subnet-public-a
+  
+  ECSFargatePublicSubnetAZB:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref ECSFargateVPC
+      AvailabilityZone: !Select [1, !GetAZs ]
+      CidrBlock: 50.0.1.0/24
+      Tags:
+        - Key: Name
+          Value: ecs-fargate-subnet-public-b
+  
+  ECSFargatePrivateSubnetAZA:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref ECSFargateVPC
+      AvailabilityZone: !Select [0, !GetAZs ]
+      CidrBlock: 50.0.10.0/24
+      Tags:
+        - Key: Name
+          Value: ecs-fargate-subnet-private-a
+  
+  ECSFargatePrivateSubnetAZB:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref ECSFargateVPC
+      AvailabilityZone: !Select [1, !GetAZs ]
+      CidrBlock: 50.0.11.0/24
+      Tags:
+        - Key: Name
+          Value: ecs-fargate-subnet-private-b
+  
+  ECSFargateInternetGateway:
+    Type: AWS::EC2::InternetGateway
+    Properties:
+      Tags:
+        - Key: Name
+          Value: ecs-fargate-internet-gateway
+  
+  ECSFargateInternetGatewayAttachment:
+    Type: AWS::EC2::VPCGatewayAttachment
+    Properties:
+      VpcId: !Ref ECSFargateVPC
+      InternetGatewayId: !Ref ECSFargateInternetGateway
+
+  ECSFargatePublicRouteTable:
+    Type: AWS::EC2::RouteTable
+    Properties:
+      VpcId: !Ref ECSFargateVPC
+      Tags:
+      - Key: Name
+        Value: ecs-fargate-public-route-table
+  
+  ECSFargateIGPublic:
+    Type: AWS::EC2::Route
+    Properties:
+      RouteTableId: !Ref ECSFargatePublicRouteTable
+      DestinationCidrBlock: 0.0.0.0/0
+      GatewayId: !Ref ECSFargateInternetGateway
+  
+  ECSFargateAttachRouteToPublicSubnetA:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      RouteTableId: !Ref ECSFargatePublicRouteTable
+      SubnetId: !Ref ECSFargatePublicSubnetAZA
+
+  ECSFargateAttachRouteToPublicSubnetB:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      RouteTableId: !Ref ECSFargatePublicRouteTable
+      SubnetId: !Ref ECSFargatePublicSubnetAZB
+
+  ## Container
+  AppServerPrivateRepository:
+    Type: AWS::ECR::Repository
+    Properties:
+      RepositoryName: app-server
+
+  ## Cluster
+  ECSFargateDemoCluster:
+    Type: AWS::ECS::Cluster
+    Properties:
+      ClusterName: ecs-fargate-demo-cluster
+      CapacityProviders:
+        - "FARGATE"
+        - "FARGATE_SPOT"
+      DefaultCapacityProviderStrategy:
+        - CapacityProvider: FARGATE
+          Weight: 1
+        - CapacityProvider: FARGATE_SPOT
+          Weight: 1
+
+  # Task Definition
+  DemoEcsLogGroupCreationRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: demo-ecs-role
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+                - ecs-tasks.amazonaws.com
+            Action:
+              - 'sts:AssumeRole'
+      ManagedPolicyArns:
+        - "arn:aws:iam::aws:policy/service-role/AmazonECSTaskExecutionRolePolicy"
+      Policies:
+        - PolicyName: demo-ecs-create-log-group
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: Allow
+                Action: "logs:CreateLogGroup"
+                Resource: "*"
+    
+  DemoTaskDefinition:
+    Type: AWS::ECS::TaskDefinition
+    Properties:
+      ExecutionRoleArn: !GetAtt DemoEcsLogGroupCreationRole.Arn
+      ContainerDefinitions:
+        - Image: !GetAtt AppServerPrivateRepository.RepositoryUri
+          Name: app-server-task-definition
+          PortMappings:
+            - Protocol: tcp
+              HostPort: 3000
+              ContainerPort: 3000
+              Name: app-server-port
+          LogConfiguration:
+            LogDriver: "awslogs"
+            Options:
+              awslogs-create-group: true
+              awslogs-group: ecs/awslogs-fargate-demo-cluster
+              awslogs-region: us-east-1
+              awslogs-stream-prefix: awslogs-task-log
+      Cpu: .25 vCPU
+      Memory: 0.5 GB
+      Family: demo-task-definition
+      RequiresCompatibilities:
+        - "FARGATE"
+        - "EC2"
+      NetworkMode: awsvpc
+  
+  ## Service
+  SecurityGroupForService:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: Opens ports for backend service
+      GroupName: app-server-sg
+      VpcId: !Ref ECSFargateVPC
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 3000
+          ToPort: 3000
+          CidrIp: 0.0.0.0/0
+  
+  SecurityGroupForLB:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: Opens ports for Load Balancer
+      GroupName: ecs-load-balancer-sg
+      VpcId: !Ref ECSFargateVPC
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 80
+          ToPort: 80
+          CidrIp: 0.0.0.0/0
+
+  ECSFargateLoadBalancer:
+    Type: AWS::ElasticLoadBalancingV2::LoadBalancer
+    Properties:
+      Name: ecs-fargate-load-balancer
+      SecurityGroups:
+        - !Ref SecurityGroupForLB
+      Subnets:
+        - !Ref ECSFargatePublicSubnetAZA
+        - !Ref ECSFargatePublicSubnetAZB
+
+  ECSFargateTargetGroup:
+    Type: AWS::ElasticLoadBalancingV2::TargetGroup
+    Properties:
+      Name: ecs-fargate-app-server-tg
+      TargetType: ip
+      VpcId: !Ref ECSFargateVPC
+      Protocol: HTTP
+      Port: 3000
+
+  ECSFargateLoadBalancerListener:
+    Type: AWS::ElasticLoadBalancingV2::Listener
+    Properties:
+      DefaultActions: 
+        - Type: forward
+          ForwardConfig:
+            TargetGroups:
+              - TargetGroupArn: !Ref ECSFargateTargetGroup
+                Weight: 1
+      LoadBalancerArn: !Ref ECSFargateLoadBalancer
+      Port: 80
+      Protocol: HTTP
+
+  ECSFargateService:
+    DependsOn: ECSFargateLoadBalancerListener
+    Type: AWS::ECS::Service
+    Properties:
+      ServiceName: app-server-service
+      LaunchType: FARGATE
+      Cluster: !GetAtt ECSFargateDemoCluster.Arn
+      DesiredCount: 3
+      NetworkConfiguration:
+        AwsvpcConfiguration:
+          Subnets:
+            - !Ref ECSFargatePublicSubnetAZA
+            - !Ref ECSFargatePublicSubnetAZB
+          AssignPublicIp: ENABLED
+          SecurityGroups:
+            - !Ref SecurityGroupForService
+      SchedulingStrategy: REPLICA
+      TaskDefinition: !Ref DemoTaskDefinition
+      LoadBalancers:
+        - ContainerName: app-server-task-definition
+          ContainerPort: 3000
+          TargetGroupArn: !Ref ECSFargateTargetGroup
