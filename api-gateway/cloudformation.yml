@@ -1,0 +1,141 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Description: Creates an API Gateway
+Resources:
+  DemoApiGateway:
+    Type: AWS::ApiGateway::RestApi
+    Properties:
+      Description: A Rest API built with cloud formation
+      Name: demo-api-gateway
+
+  DemoMockResource:
+    Type: AWS::ApiGateway::Resource
+    Properties:
+      RestApiId: !Ref DemoApiGateway
+      ParentId: !GetAtt DemoApiGateway.RootResourceId
+      PathPart: demoMock
+  
+  DemoAWSProxyResource:
+    Type: AWS::ApiGateway::Resource
+    Properties:
+      RestApiId: !Ref DemoApiGateway
+      ParentId: !GetAtt DemoApiGateway.RootResourceId
+      PathPart: awsProxyDemo
+  
+  DemoValidator:
+    Type: AWS::ApiGateway::RequestValidator
+    Properties:
+      Name: demo-validator
+      RestApiId: !Ref DemoApiGateway
+      ValidateRequestBody: true
+      ValidateRequestParameters: true
+
+  DemoMockResourceGetMethod:
+    Type: AWS::ApiGateway::Method
+    Properties:
+      HttpMethod: GET
+      OperationName: List demos
+      ResourceId: !Ref DemoMockResource
+      RestApiId: !Ref DemoApiGateway
+      AuthorizationType: NONE
+      RequestValidatorId: !Ref DemoValidator
+      RequestParameters:
+        method.request.querystring.scenario: true
+      Integration:
+        Type: MOCK
+        RequestParameters:
+          integration.request.querystring.scenario: method.request.querystring.scenario
+        RequestTemplates:
+          application/json: |
+            {
+              #if( $input.params('scenario') == "error" )
+                "statusCode": 500
+              #else
+                "statusCode": 200
+              #end
+            }
+        IntegrationResponses:
+          - StatusCode: 200
+            ResponseTemplates:
+              application/json: '{Message: "Demo resource"}'
+          - StatusCode: 500
+            SelectionPattern: 5\d{2}
+            ResponseTemplates:
+              application/json: '{ErrorMessage: "Error Demo resource"}'
+      MethodResponses:
+        - StatusCode: 200
+        - StatusCode: 500
+
+  DemoLambdaRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: demo-lambda-role
+      AssumeRolePolicyDocument: 
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+                - lambda.amazonaws.com
+            Action:
+              - 'sts:AssumeRole'
+      Description: Role for lambda
+      ManagedPolicyArns: 
+        - arn:aws:iam::aws:policy/AWSLambdaExecute
+  
+  DemoLambda:
+    Type: AWS::Lambda::Function
+    Properties:
+      Runtime: nodejs18.x
+      Handler: index.handler
+      Code: 
+        ZipFile: |
+          const handler = async (event) => {
+            const response = {
+              statusCode: 200,
+              body: JSON.stringify('Hello from Lambda!'),
+            };
+            return response;
+          };
+          module.exports = {handler}
+      Description: Hello world lambda.
+      Role: !GetAtt DemoLambdaRole.Arn
+
+  ApiGatewayPermissionToLambda:
+    Type: AWS::Lambda::Permission
+    Properties:
+      Action: lambda:InvokeFunction
+      FunctionName: !GetAtt DemoLambda.Arn
+      Principal: apigateway.amazonaws.com
+      SourceArn: !Sub
+        - 'arn:${partition}:execute-api:${region}:${account}:${apigatewayid}/${stage}/GET/awsProxyDemo'
+        - partition: !Ref "AWS::Partition"
+          region: !Ref "AWS::Region"
+          account: !Ref "AWS::AccountId"
+          apigatewayid: !Ref DemoApiGateway
+          stage: Dev
+  
+  DemoAWSProxyResourceGetMethod:
+    Type: AWS::ApiGateway::Method
+    Properties:
+      HttpMethod: GET
+      OperationName: calls lambda get
+      ResourceId: !Ref DemoAWSProxyResource
+      RestApiId: !Ref DemoApiGateway
+      AuthorizationType: NONE
+      RequestValidatorId: !Ref DemoValidator
+      Integration:
+        Type: AWS_PROXY
+        IntegrationHttpMethod: POST
+        Uri: !Sub
+          - 'arn:aws:apigateway:us-east-1:lambda:path/2015-03-31/functions/${arn}/invocations'
+          - arn: !GetAtt DemoLambda.Arn
+  
+  DemoApiDeployment:
+    DependsOn: 
+      - DemoMockResourceGetMethod
+      - DemoAWSProxyResourceGetMethod
+    Type: AWS::ApiGateway::Deployment
+    Properties:
+      RestApiId: !Ref DemoApiGateway
+      Description: Dev Deployment
+      StageName: Dev
