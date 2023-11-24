@@ -1,0 +1,104 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Description: Creates a Dynamodb Tables
+
+Resources:
+  DemoTablePartitionKeyOnly:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: DemoEmployee
+      AttributeDefinitions:
+        - AttributeName: pk_id
+          AttributeType: S
+      KeySchema:
+        - AttributeName: pk_id
+          KeyType: HASH
+      ProvisionedThroughput:
+          ReadCapacityUnits: 1
+          WriteCapacityUnits: 1
+  
+  DemoTableLocalSecondaryIndex:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: DemoEmployeeLSI
+      AttributeDefinitions:
+        - AttributeName: pk_id
+          AttributeType: S
+        - AttributeName: sk_year
+          AttributeType: N
+        - AttributeName: month
+          AttributeType: N
+      KeySchema:
+        - AttributeName: pk_id
+          KeyType: HASH
+        - AttributeName: sk_year
+          KeyType: RANGE
+      ProvisionedThroughput:
+        ReadCapacityUnits: 1
+        WriteCapacityUnits: 1
+      LocalSecondaryIndexes:
+        - IndexName: byMonth
+          KeySchema:
+            - AttributeName: pk_id
+              KeyType: HASH
+            - AttributeName: month
+              KeyType: RANGE
+          Projection:
+            ProjectionType: ALL
+      StreamSpecification:
+        StreamViewType: NEW_AND_OLD_IMAGES
+  
+  DemoLambdaRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: demo-lambda-role
+      AssumeRolePolicyDocument: 
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+                - lambda.amazonaws.com
+            Action:
+              - 'sts:AssumeRole'
+      Description: Role for lambda
+      ManagedPolicyArns: 
+        - arn:aws:iam::aws:policy/AWSLambdaExecute
+      Policies:
+        - PolicyName: dynamodb-stream
+          PolicyDocument: 
+            Version: "2012-10-17"
+            Statement:
+              - Effect: Allow
+                Action:
+                  - dynamodb:DescribeStream
+                  - dynamodb:GetRecords
+                  - dynamodb:GetShardIterator
+                  - dynamodb:ListStreams
+                Resource: !Sub "${DemoTableLocalSecondaryIndex.Arn}/stream/*"  
+  DemoLambda:
+    Type: AWS::Lambda::Function
+    Properties:
+      Runtime: nodejs18.x
+      Handler: index.handler
+      Code: 
+        ZipFile: |
+          const handler = async (event) => {
+            console.log(JSON.stringify(event))
+            const response = {
+              statusCode: 200,
+              body: JSON.stringify('Hello from Lambda!'),
+            };
+            return response;
+          };
+          module.exports = {handler}
+      Description: Hello world lambda.
+      Role: !GetAtt DemoLambdaRole.Arn
+  
+  MyLambdaEventSourceMapping:
+    Type: AWS::Lambda::EventSourceMapping
+    Properties:
+      BatchSize: 10
+      EventSourceArn: !GetAtt DemoTableLocalSecondaryIndex.StreamArn
+      FunctionName: !Ref DemoLambda
+      StartingPosition: LATEST
+      MaximumRetryAttempts: 3
