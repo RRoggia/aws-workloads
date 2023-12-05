@@ -5,6 +5,7 @@ phases:
       java: corretto17
   build:
     commands:
+      - cd code-build/sam-app/HelloWorldFunction
       - mvn package
       - sam package --template-file template.yml --s3-bucket sam-app --output-template-file packaged-template.yml
 artifacts:

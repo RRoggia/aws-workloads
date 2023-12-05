@@ -1,5 +1,5 @@
 AWSTemplateFormatVersion: "2010-09-09"
-Description: Creates a Cognito pools
+Description: Creates a Code build for lambda
 
 Resources:
   CodeBuildRole:
@@ -15,6 +15,17 @@ Resources:
                 - codebuild.amazonaws.com
             Action:
               - sts:AssumeRole
+      Policies:
+        - PolicyName: cw-access-logs
+          PolicyDocument: 
+            Version: "2012-10-17"
+            Statement:
+              - Effect: "Allow"
+                Action:
+                  - "logs:CreateLogGroup"
+                  - "logs:CreateLogStream"
+                  - "logs:PutLogEvents"
+                Resource: "*"
 
   DemoCodeBuildLambda:
     Type: AWS::CodeBuild::Project
