@@ -3,3 +3,4 @@
 **/.serverless/**
 .env
 dist/
+.aws-sam

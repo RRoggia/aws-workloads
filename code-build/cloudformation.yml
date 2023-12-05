@@ -1,0 +1,35 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Description: Creates a Cognito pools
+
+Resources:
+  CodeBuildRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: CodeBuildServiceRole
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+                - codebuild.amazonaws.com
+            Action:
+              - sts:AssumeRole
+
+  DemoCodeBuildLambda:
+    Type: AWS::CodeBuild::Project
+    Properties:
+      Name: demo-code-build-lambda
+      Description: Lambda build step
+      Source:
+        Type: GITHUB
+        Auth:
+          Type: OAUTH
+        Location: https://github.com/rroggia/aws-workloads.git
+        BuildSpec: ./code-build/sam-app/buildspec.yml
+      Environment:
+        Image: aws/codebuild/amazonlinux-x86_64-lambda-standard:corretto17
+        Type: LINUX_LAMBDA_CONTAINER
+      Artifacts:
+        Type: NO_ARTIFACTS
+      ServiceRole: !GetAtt CodeBuildRole.Arn
