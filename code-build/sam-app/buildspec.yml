@@ -8,7 +8,7 @@ phases:
       - cd code-build/sam-app/HelloWorldFunction
       - mvn package
       - cd ../
-      - sam package --template-file template.yml --s3-bucket sam-app --output-template-file packaged-template.yml
+      - sam package --template-file template.yaml --s3-bucket sam-app --output-template-file packaged-template.yaml
 artifacts:
   files:
-    - packaged-template.yml
+    - packaged-template.yaml
