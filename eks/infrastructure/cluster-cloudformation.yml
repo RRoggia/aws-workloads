@@ -1,0 +1,45 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Description: Creates the EKS
+
+Resources:
+  EKSCluster:
+    Type: AWS::EKS::Cluster
+    Properties:
+      Name: eks-dev
+      ResourcesVpcConfig: 
+        SubnetIds:
+          - !ImportValue 'eks-dev-stack-PrivateSubnet01'
+          - !ImportValue 'eks-dev-stack-PrivateSubnet02'
+          - !ImportValue 'eks-dev-stack-PublicSubnet01'
+          - !ImportValue 'eks-dev-stack-PublicSubnet02'
+      RoleArn: !ImportValue 'eks-dev-cluster-roles-stack-EKS-Cluster-Role-Arn'
+      Logging:
+        ClusterLogging:
+          EnabledTypes:
+            - Type: api
+            - Type: audit
+            - Type: authenticator
+            - Type: controllerManager
+            - Type: scheduler
+      Version: "1.28"
+  
+  EKSNodeGroup:
+    Type: AWS::EKS::Nodegroup
+    Properties:
+      ClusterName: !Ref EKSCluster
+      NodeRole: !ImportValue 'eks-dev-cluster-roles-stack-EKS-NodeGroup-Role-Arn'
+      NodegroupName: private-ec2-machines
+      Subnets: 
+        - !ImportValue 'eks-dev-stack-PrivateSubnet01'
+        - !ImportValue 'eks-dev-stack-PrivateSubnet02'
+      ScalingConfig: 
+        DesiredSize: 1
+        MaxSize: 3
+        MinSize: 1
+      AmiType: AL2_x86_64
+      CapacityType: ON_DEMAND
+      InstanceTypes: 
+        - t3.medium
+      DiskSize: 20
+      UpdateConfig: 
+        MaxUnavailablePercentage: 50

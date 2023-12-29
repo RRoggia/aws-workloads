@@ -1,0 +1,16 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: print-10000
+spec:
+  template:
+    spec:
+      containers:
+        - name: print-10000
+          image: node:21-alpine3.18
+          command: ["node", "-e", "console.log(10000)"]
+      restartPolicy: Never
+  backoffLimit: 4
+
+
+     
